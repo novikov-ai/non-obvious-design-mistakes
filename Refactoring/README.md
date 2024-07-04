@@ -237,3 +237,90 @@ namespace Generator
     }
 }
 ~~~
+
+Тесты на use cases:
+
+~~~C#
+using Xunit;
+using Generator;
+using System.IO;
+using System.Linq;
+
+public class GeneratorUseCasesTests
+{
+    private readonly string _nounsPath = "nouns.txt";
+    private readonly string _adverbsPath = "adverbs.txt";
+    private readonly string _adjectivesPath = "adjectives.txt";
+    private readonly string _outputPath = "output.txt";
+
+    public GeneratorUseCasesTests()
+    {
+        // Setup: Create files with sample data
+        File.WriteAllLines(_nounsPath, new[] { "cat", "dog" });
+        File.WriteAllLines(_adverbsPath, new[] { "quickly", "slowly" });
+        File.WriteAllLines(_adjectivesPath, new[] { "furry", "scaly" });
+    }
+
+    [Fact]
+    public void GenerateSentence_WithValidWordParts_ShouldReturnNonEmptySentence()
+    {
+        var wordsParts = new WordsParts(_nounsPath, _adverbsPath, _adjectivesPath);
+        var sentence = new Sentence(wordsParts);
+        
+        var generatedSentence = sentence.Create();
+        
+        Assert.False(string.IsNullOrEmpty(generatedSentence));
+        Assert.Matches(@"\w+ is \w+ \w+", generatedSentence);
+    }
+
+    [Fact]
+    public void GenerateSentence_WithEmptyWordParts_ShouldReturnEmptySentence()
+    {
+        File.WriteAllLines(_nounsPath, new string[] { });
+        var wordsParts = new WordsParts(_nounsPath, _adverbsPath, _adjectivesPath);
+        var sentence = new Sentence(wordsParts);
+        
+        var generatedSentence = sentence.Create();
+        
+        Assert.True(string.IsNullOrEmpty(generatedSentence));
+    }
+
+    [Fact]
+    public void GenerateFile_WithValidWordParts_ShouldCreateFileWithExpectedSize()
+    {
+        var wordsParts = new WordsParts(_nounsPath, _adverbsPath, _adjectivesPath);
+        var sentence = new Sentence(wordsParts, _outputPath);
+
+        sentence.Generate(1); // Generate 1 MB file
+
+        var fileInfo = new FileInfo(_outputPath);
+        Assert.True(fileInfo.Length >= 1024 * 1024);
+    }
+
+    [Fact]
+    public void GenerateFile_ShouldReuseCachedSentencesOccasionally()
+    {
+        var wordsParts = new WordsParts(_nounsPath, _adverbsPath, _adjectivesPath);
+        var sentence = new Sentence(wordsParts, _outputPath);
+
+        sentence.Generate(1); // Generate 1 MB file
+
+        var lines = File.ReadAllLines(_outputPath);
+
+        // Since we expect occasional reuse, there should be duplicate sentences
+        var sentences = lines.Select(line => line.Split(new[] { ". " }, 2, StringSplitOptions.None)[1]);
+        var distinctSentences = sentences.Distinct();
+
+        Assert.True(sentences.Count() > distinctSentences.Count());
+    }
+
+    // Cleanup after tests
+    public void Dispose()
+    {
+        File.Delete(_nounsPath);
+        File.Delete(_adverbsPath);
+        File.Delete(_adjectivesPath);
+        File.Delete(_outputPath);
+    }
+}
+~~~
