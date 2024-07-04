@@ -9,7 +9,7 @@
     - рандомайзер слов `WordRandomizer`
     - словарь для частей речи `WordsParts`
     - генерация предложений `Sentence`
-2. Теперь проект поделен на логические части - его удалось разделить явно, выделяя более высокие абстракции. 
+2. Сейчас проект поделен на логические части - его удалось разделить явно, выделяя более высокие абстракции. 
 
 До:
 ~~~C#
@@ -203,7 +203,7 @@ namespace Generator
 
                 while (byteSum > 0)
                 {
-                    var generatedSentence = SentenceCreate();
+                    var generatedSentence = Create();
 
                     if (cachedSentence != null && byteSum % _random.Next(10, 20) == 0)
                     {
@@ -225,7 +225,7 @@ namespace Generator
             }
         }
 
-        private string SentenceCreate()
+        private string Create()
         {
             if (!_wordsParts.PartsValid())
             {
